@@ -1,0 +1,109 @@
+
+networks:
+  cti-network:
+    driver: bridge
+    internal: false  
+
+volumes:
+  postgres-data: 
+  
+services:
+
+  tor:
+    image: peterdavehello/tor-socks-proxy:latest
+    container_name: cti-tor-gateway
+    networks:
+      - cti-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 9050 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: cti-database
+    networks:
+      - cti-network
+    environment:
+      POSTGRES_DB: cti_data
+      POSTGRES_USER: cti_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change_in_production}  
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cti_user -d cti_data"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  scraper:
+    build:
+      context: ./scraper
+      dockerfile: Dockerfile
+    container_name: cti-scraper
+    networks:
+      - cti-network
+    depends_on:
+      tor:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      TOR_PROXY: tor:9050 
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: cti_data
+      DB_USER: cti_user
+      DB_PASSWORD: ${DB_PASSWORD:-change_in_production}
+      LOG_LEVEL: info
+    restart: unless-stopped
+ 
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # 4️⃣ DASHBOARD - Görselleştirme Katmanı (opsiyonel şimdilik)
+  # dashboard:
+  #   build:
+  #     context: ./dashboard
+  #   container_name: cti-dashboard
+  #   networks:
+  #     - cti-network
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   ports:
+  #     - "8080:8080"  # Sadece dashboard dışarı açılır
+  #   environment:
+  #     DB_HOST: postgres
+  #     DB_PORT: 5432
+  #     DB_NAME: cti_data
+  #     DB_USER: cti_user
+  #     DB_PASSWORD: ${DB_PASSWORD:-change_in_production}
+  #   restart: unless-stopped
+
+  test-transport:
+    build:
+      context: ./
+      dockerfile: cmd/test_transport/Dockerfile
+    container_name: cti-test-transport
+    networks:
+      - cti-network
+    depends_on:
+      tor:
+        condition: service_healthy
+    environment:
+      TOR_PROXY: tor:9050
+      REQUEST_TIMEOUT: 60s
+      MAX_RETRIES: 3
+      LOG_LEVEL: debug
