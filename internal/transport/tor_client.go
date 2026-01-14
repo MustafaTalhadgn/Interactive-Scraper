@@ -19,10 +19,11 @@ const (
 )
 
 type TorClient struct {
-	httpClient *http.Client
-	logger     *slog.Logger
-	config     *config.Config
-	userAgent  string
+	httpClient  *http.Client
+	logger      *slog.Logger
+	config      *config.Config
+	userAgent   string
+	rateLimiter *RateLimiter
 }
 
 func NewTorClient(cfg *config.Config, logger *slog.Logger) (*TorClient, error) {
@@ -63,14 +64,21 @@ func NewTorClient(cfg *config.Config, logger *slog.Logger) (*TorClient, error) {
 	)
 
 	return &TorClient{
-		config:     cfg,
-		httpClient: httpClient,
-		logger:     logger,
-		userAgent:  defaultUserAgent,
+		config:      cfg,
+		httpClient:  httpClient,
+		logger:      logger,
+		userAgent:   defaultUserAgent,
+		rateLimiter: NewRateLimiter(cfg.RateLimitRPS),
 	}, nil
 }
 
 func (t *TorClient) Fetch(ctx context.Context, url string) (*http.Response, error) {
+
+	if err := t.rateLimiter.Wait(ctx); err != nil {
+		return nil, NewTransportError(url, 0, 0,
+			fmt.Errorf("rate limit wait cancelled: %w", err), false)
+	}
+
 	var lastErr error
 	for attempt := 1; attempt <= t.config.MaxRetries; attempt++ {
 		t.logger.Debug("istek atılıyor",

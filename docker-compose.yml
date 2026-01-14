@@ -16,7 +16,7 @@ services:
       - cti-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "nc -z 127.0.0.1 9050 || exit 1"]
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 9150 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -56,7 +56,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      TOR_PROXY: tor:9050 
+      TOR_PROXY: tor:9150
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: cti_data
@@ -95,15 +95,15 @@ services:
   test-transport:
     build:
       context: ./
-      dockerfile: cmd/test_transport/Dockerfile
-    container_name: cti-test-transport
+      dockerfile: cmd/rate_limiter/Dockerfile
+    container_name: cti-rate-limiter
     networks:
       - cti-network
     depends_on:
       tor:
         condition: service_healthy
     environment:
-      TOR_PROXY: tor:9050
+      TOR_PROXY: tor:9150
       REQUEST_TIMEOUT: 60s
       MAX_RETRIES: 3
       LOG_LEVEL: debug

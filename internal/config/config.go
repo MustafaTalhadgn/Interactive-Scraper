@@ -20,16 +20,16 @@ type Config struct {
 	ScraperInterval time.Duration
 	MaxRetries      int
 	RequestTimeOut  time.Duration
-
-	HealthPort string
+	RateLimitRPS    int
+	HealthPort      string
 
 	LogLevel string
 }
 
 func Load() *Config {
 	return &Config{
-		TorProxy:       getEnv("TOR_PROXY", "tor:9050"),
-		TorControlPort: getEnv("TOR_CONTROL_PORT", "tor:9051"),
+		TorProxy:       getEnv("TOR_PROXY", "tor:9150"),
+		TorControlPort: getEnv("TOR_CONTROL_PORT", "tor:9050"),
 
 		DBHost:     getEnv("DB_HOST", "postgres"),
 		DBPort:     getEnvAsInt("DB_PORT", 5432),
@@ -40,8 +40,8 @@ func Load() *Config {
 		ScraperInterval: getEnvAsDuration("SCRAPER_INTERVAL", 1*time.Hour),
 		MaxRetries:      getEnvAsInt("MAX_RETRIES", 3),
 		RequestTimeOut:  getEnvAsDuration("REQUEST_TIMEOUT", 30*time.Second),
-
-		HealthPort: getEnv("HEALTH_PORT", "8080"),
+		RateLimitRPS:    getEnvAsInt("RATE_LIMIT_RPS", 1),
+		HealthPort:      getEnv("HEALTH_PORT", "8080"),
 
 		LogLevel: getEnv("LOG_LEVEL", "info"),
 	}
