@@ -95,8 +95,8 @@ services:
   test-transport:
     build:
       context: ./
-      dockerfile: cmd/test_validator/dockerfile
-    container_name: cti-test-validator
+      dockerfile: cmd/test_parser/Dockerfile
+    container_name: cti-test-parser
     networks:
       - cti-network
     depends_on:
