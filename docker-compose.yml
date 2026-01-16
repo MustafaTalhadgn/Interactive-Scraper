@@ -95,8 +95,8 @@ services:
   test-transport:
     build:
       context: ./
-      dockerfile: cmd/test_normalizer/Dockerfile
-    container_name: cti-test-normalizer
+      dockerfile: cmd/test_extractor/Dockerfile
+    container_name: cti-test-extractor
     networks:
       - cti-network
     depends_on:
