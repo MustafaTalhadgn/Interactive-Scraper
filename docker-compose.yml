@@ -95,8 +95,8 @@ services:
   test-transport:
     build:
       context: ./
-      dockerfile: cmd/test_extractor/Dockerfile
-    container_name: cti-test-extractor
+      dockerfile: cmd/test_scorer/Dockerfile
+    container_name: cti-test-scorer
     networks:
       - cti-network
     depends_on:
