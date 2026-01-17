@@ -1,4 +1,3 @@
-
 networks:
   cti-network:
     driver: bridge
@@ -45,8 +44,8 @@ services:
 
   scraper:
     build:
-      context: ./scraper
-      dockerfile: Dockerfile
+      context: ./
+      dockerfile: internal/scraper/Dockerfile
     container_name: cti-scraper
     networks:
       - cti-network
@@ -56,17 +55,21 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      TOR_PROXY: tor:9150
+      TOR_PROXY: tor:9050
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: cti_data
       DB_USER: cti_user
       DB_PASSWORD: ${DB_PASSWORD:-change_in_production}
+      SCRAPER_INTERVAL: 1h  
+      REQUEST_TIMEOUT: 60s
+      MAX_RETRIES: 3
+      RATE_LIMIT_RPS: 1
       LOG_LEVEL: info
+      HEALTH_PORT: 8081
     restart: unless-stopped
- 
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8081/health"]
       interval: 30s
       timeout: 10s
       retries: 3
