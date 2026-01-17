@@ -43,6 +43,7 @@ services:
       retries: 5
 
   scraper:
+    platform: linux/amd64
     build:
       context: ./
       dockerfile: internal/scraper/Dockerfile
@@ -55,7 +56,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      TOR_PROXY: tor:9050
+      TOR_PROXY: tor:9150
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: cti_data
@@ -95,22 +96,3 @@ services:
   #     DB_PASSWORD: ${DB_PASSWORD:-change_in_production}
   #   restart: unless-stopped
 
-  test-storage:
-   build:
-    context: ./
-    dockerfile: cmd/test_storage/Dockerfile
-   container_name: cti-test-storage
-   networks:
-    - cti-network
-   depends_on:
-    postgres:
-      condition: service_healthy
-   environment:
-    TOR_PROXY: tor:9150
-    DB_HOST: postgres
-    DB_PORT: 5432
-    DB_NAME: cti_data
-    DB_USER: cti_user
-    DB_PASSWORD: ${DB_PASSWORD:-change_in_production}
-    LOG_LEVEL: debug
-   restart: "no"

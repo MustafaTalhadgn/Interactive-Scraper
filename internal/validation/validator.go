@@ -80,13 +80,18 @@ func (v *Validator) validateContentType(contentType string) error {
 		return nil
 	}
 
-	if !strings.Contains(strings.ToLower(contentType), "text/html") {
-		return ErrInvalidContentType(contentType)
+	ct := strings.ToLower(contentType)
+
+	if strings.Contains(ct, "text/html") {
+		return nil
 	}
 
-	return nil
-}
+	if strings.Contains(ct, "application/xhtml+xml") {
+		return nil
+	}
 
+	return ErrInvalidContentType(contentType)
+}
 func (v *Validator) validateContentLength(length int64) error {
 	if length > v.maxBodySize {
 		return ErrBodyTooLarge(length)

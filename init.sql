@@ -13,14 +13,11 @@ CREATE TABLE IF NOT EXISTS sources (
 
 CREATE TABLE IF NOT EXISTS intelligence_data (
     id SERIAL PRIMARY KEY,
-    source_id INTEGER 
-        REFERENCES sources(id) 
-        ON DELETE CASCADE,
+    source_id INTEGER REFERENCES sources(id) ON DELETE CASCADE,
     title VARCHAR(500),
-    analyzed_content  TEXT NOT NULL,
+    raw_content TEXT NOT NULL, 
     source_url TEXT NOT NULL,
-    criticality_score INT 
-        CHECK (criticality_score BETWEEN 0 AND 100),
+    criticality_score INT CHECK (criticality_score BETWEEN 0 AND 100),
     published_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT NOW()
 );

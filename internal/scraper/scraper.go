@@ -18,7 +18,6 @@ import (
 	"InteractiveScraper/internal/validation"
 )
 
-// Scraper orchestrates the complete scraping process
 type Scraper struct {
 	config    *config.Config
 	storage   storage.Storage
@@ -79,7 +78,7 @@ func NewScraper(
 }
 
 func (s *Scraper) Run(ctx context.Context) error {
-	s.logger.Info("scraper started",
+	s.logger.Info("scraper başlatıldı",
 		slog.Duration("interval", s.config.ScraperInterval),
 	)
 
@@ -87,18 +86,18 @@ func (s *Scraper) Run(ctx context.Context) error {
 	defer ticker.Stop()
 
 	if err := s.scrapeOnce(ctx); err != nil {
-		s.logger.Error("initial scrape failed", slog.String("error", err.Error()))
+		s.logger.Error("scraper başarısız oldu", slog.String("error", err.Error()))
 	}
 
 	for {
 		select {
 		case <-ctx.Done():
-			s.logger.Info("scraper shutting down")
+			s.logger.Info("scraper kapatılıyor")
 			return ctx.Err()
 
 		case <-ticker.C:
 			if err := s.scrapeOnce(ctx); err != nil {
-				s.logger.Error("scrape cycle failed", slog.String("error", err.Error()))
+				s.logger.Error("scrape döngüsü başarısız oldu", slog.String("error", err.Error()))
 			}
 		}
 	}
@@ -109,15 +108,15 @@ func (s *Scraper) scrapeOnce(ctx context.Context) error {
 
 	sources, err := s.scheduler.GetDueSources(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to get due sources: %w", err)
+		return fmt.Errorf("zamanı gelen kaynaklar alınamadı: %w", err)
 	}
 
 	if len(sources) == 0 {
-		s.logger.Debug("no sources due for scraping")
+		s.logger.Debug("zamanı gelen kaynak yok")
 		return nil
 	}
 
-	s.logger.Info("starting scrape cycle",
+	s.logger.Info("scrape döngüsü başlatıldı",
 		slog.Int("sources_count", len(sources)),
 	)
 
@@ -127,7 +126,7 @@ func (s *Scraper) scrapeOnce(ctx context.Context) error {
 	for _, source := range sources {
 
 		if ctx.Err() != nil {
-			s.logger.Warn("scrape cycle cancelled")
+			s.logger.Warn("scrape döngüsü iptal edildi")
 			break
 		}
 
@@ -136,7 +135,7 @@ func (s *Scraper) scrapeOnce(ctx context.Context) error {
 		if result.Success {
 
 			if err := s.saveIntelligence(ctx, result); err != nil {
-				s.logger.Error("failed to save intelligence",
+				s.logger.Error("intelligence kaydedilemedi",
 					slog.Int("source_id", source.ID),
 					slog.String("error", err.Error()),
 				)
@@ -146,7 +145,7 @@ func (s *Scraper) scrapeOnce(ctx context.Context) error {
 			}
 
 			if err := s.storage.UpdateSourceLastScraped(ctx, source.ID, time.Now()); err != nil {
-				s.logger.Warn("failed to update source timestamp",
+				s.logger.Warn("kaynak zaman damgası güncellenemedi",
 					slog.Int("source_id", source.ID),
 					slog.String("error", err.Error()),
 				)
@@ -156,7 +155,7 @@ func (s *Scraper) scrapeOnce(ctx context.Context) error {
 			s.updateStats(true, nil)
 
 		} else {
-			s.logger.Error("pipeline processing failed",
+			s.logger.Error("pipeline işleme başarısız oldu",
 				slog.Int("source_id", source.ID),
 				slog.String("stage", result.Stage),
 				slog.String("error", result.Error.Error()),
@@ -170,7 +169,7 @@ func (s *Scraper) scrapeOnce(ctx context.Context) error {
 
 	duration := time.Since(start)
 
-	s.logger.Info("scrape cycle completed",
+	s.logger.Info("scrape döngüsü tamamlandı",
 		slog.Int("total_sources", len(sources)),
 		slog.Int("success", successCount),
 		slog.Int("errors", errorCount),
@@ -183,10 +182,10 @@ func (s *Scraper) scrapeOnce(ctx context.Context) error {
 func (s *Scraper) saveIntelligence(ctx context.Context, result *ProcessingResult) error {
 	_, err := s.storage.SaveIntelligence(ctx, result.IntelligenceData)
 	if err != nil {
-		return fmt.Errorf("storage failed: %w", err)
+		return fmt.Errorf("storage başarısız oldu: %w", err)
 	}
 
-	s.logger.Info("intelligence saved",
+	s.logger.Info("intelligence kaydedildi",
 		slog.Int("source_id", result.SourceID),
 		slog.String("title", result.IntelligenceData.Title),
 		slog.Int("score", result.IntelligenceData.CriticalityScore),
@@ -225,7 +224,7 @@ func (s *Scraper) GetStats() Stats {
 func (s *Scraper) ScrapeSource(ctx context.Context, sourceID int) error {
 	source, err := s.storage.GetSourceByID(ctx, sourceID)
 	if err != nil {
-		return fmt.Errorf("failed to get source: %w", err)
+		return fmt.Errorf("kaynak alınamadı: %w", err)
 	}
 
 	result := s.pipeline.Process(ctx, source)
