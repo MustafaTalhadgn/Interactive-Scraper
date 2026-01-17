@@ -24,7 +24,29 @@ CREATE TABLE IF NOT EXISTS intelligence_data (
     published_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT NOW()
 );
+CREATE TABLE extracted_features (
+    id SERIAL PRIMARY KEY,
+    intelligence_id INTEGER REFERENCES intelligence_data(id) ON DELETE CASCADE,
+    
 
+    bitcoin_addrs TEXT[], 
+    ethereum_addrs TEXT[],
+    monero_addrs TEXT[],
+    
+  
+    onion_urls TEXT[],
+    ip_addresses TEXT[],
+    
+
+    emails TEXT[],
+    
+
+    cves TEXT[],
+    
+    keywords TEXT[],
+    
+    created_at TIMESTAMP DEFAULT NOW()
+);
 
 CREATE INDEX idx_sources_enabled ON sources(enabled);
 CREATE INDEX idx_intel_criticality ON intelligence_data(criticality_score);
