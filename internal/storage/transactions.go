@@ -12,7 +12,7 @@ func WithTransaction(ctx context.Context, db *sql.DB, fn TxFunc) error {
 
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
+		return fmt.Errorf("işlem başlatılamadı: %w", err)
 	}
 
 	defer func() {
@@ -25,13 +25,13 @@ func WithTransaction(ctx context.Context, db *sql.DB, fn TxFunc) error {
 	if err := fn(tx); err != nil {
 
 		if rbErr := tx.Rollback(); rbErr != nil {
-			return fmt.Errorf("error rolling back transaction: %v (original error: %w)", rbErr, err)
+			return fmt.Errorf("işlem geri alınırken hata oluştu: %v (orijinal hata: %w)", rbErr, err)
 		}
 		return err
 	}
 
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
+		return fmt.Errorf("işlem tamamlanırken hata oluştu: %w", err)
 	}
 
 	return nil

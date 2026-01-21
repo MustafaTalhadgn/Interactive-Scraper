@@ -139,7 +139,7 @@ func (s *PostgresStorage) SaveIntelligence(ctx context.Context, input *Intellige
 			queryInsertIntelligence,
 			input.SourceID,
 			input.Title,
-			input.RawContent,
+			input.Summary,
 			input.SourceURL,
 			input.CriticalityScore,
 			input.PublishedAt,
@@ -153,7 +153,7 @@ func (s *PostgresStorage) SaveIntelligence(ctx context.Context, input *Intellige
 			ID:               id,
 			SourceID:         input.SourceID,
 			Title:            input.Title,
-			RawContent:       input.RawContent,
+			Summary:          input.Summary,
 			SourceURL:        input.SourceURL,
 			CriticalityScore: input.CriticalityScore,
 			PublishedAt:      input.PublishedAt,
@@ -204,7 +204,7 @@ func (s *PostgresStorage) GetIntelligenceByID(ctx context.Context, id int) (*Int
 		&data.ID,
 		&data.SourceID,
 		&data.Title,
-		&data.RawContent,
+		&data.Summary,
 		&data.SourceURL,
 		&data.CriticalityScore,
 		&data.PublishedAt,
@@ -235,7 +235,7 @@ func (s *PostgresStorage) GetRecentIntelligence(ctx context.Context, limit int) 
 			&data.ID,
 			&data.SourceID,
 			&data.Title,
-			&data.RawContent,
+			&data.Summary,
 			&data.SourceURL,
 			&data.CriticalityScore,
 			&data.PublishedAt,
@@ -264,7 +264,7 @@ func (s *PostgresStorage) GetIntelligenceByCriticality(ctx context.Context, minS
 			&data.ID,
 			&data.SourceID,
 			&data.Title,
-			&data.RawContent,
+			&data.Summary,
 			&data.SourceURL,
 			&data.CriticalityScore,
 			&data.PublishedAt,
@@ -364,4 +364,306 @@ func (s *PostgresStorage) Ping(ctx context.Context) error {
 func (s *PostgresStorage) Close() error {
 	s.logger.Info("veritabanı bağlantısı kapatılıyor")
 	return s.db.Close()
+}
+
+func (s *PostgresStorage) GetIntelligenceFeed(ctx context.Context, filters IntelligenceFilters) (*IntelligenceFeedResult, error) {
+
+	query := queryGetIntelligenceFeed
+	countQuery := queryCountIntelligenceFeed
+	args := []interface{}{}
+	argCount := 1
+
+	if filters.Criticality != "" {
+		var minScore int
+		switch filters.Criticality {
+		case "critical":
+			minScore = 76
+		case "high":
+			minScore = 51
+		case "medium":
+			minScore = 26
+		case "low":
+			minScore = 0
+		}
+
+		clause := fmt.Sprintf(" AND i.criticality_score >= $%d", argCount)
+		query += clause
+		countQuery += clause
+		args = append(args, minScore)
+		argCount++
+	}
+
+	if filters.SourceID > 0 {
+		clause := fmt.Sprintf(" AND i.source_id = $%d", argCount)
+		query += clause
+		countQuery += clause
+		args = append(args, filters.SourceID)
+		argCount++
+	}
+
+	if filters.Category != "" {
+		clause := fmt.Sprintf(" AND s.category = $%d", argCount)
+		query += clause
+		countQuery += clause
+		args = append(args, filters.Category)
+		argCount++
+	}
+
+	if filters.Search != "" {
+		clause := fmt.Sprintf(" AND (i.title ILIKE $%d OR i.raw_content ILIKE $%d)", argCount, argCount)
+		query += clause
+		countQuery += clause
+		searchPattern := "%" + filters.Search + "%"
+		args = append(args, searchPattern)
+		argCount++
+	}
+
+	if filters.DateFrom != nil {
+		clause := fmt.Sprintf(" AND i.created_at >= $%d", argCount)
+		query += clause
+		countQuery += clause
+		args = append(args, filters.DateFrom)
+		argCount++
+	}
+
+	if filters.DateTo != nil {
+		clause := fmt.Sprintf(" AND i.created_at <= $%d", argCount)
+		query += clause
+		countQuery += clause
+		args = append(args, filters.DateTo)
+		argCount++
+	}
+
+	// Get total count
+	var total int
+	err := s.db.QueryRowContext(ctx, countQuery, args...).Scan(&total)
+	if err != nil {
+		return nil, fmt.Errorf("count query failed: %w", err)
+	}
+
+	// Add ORDER BY and pagination
+	query += " ORDER BY i.created_at DESC"
+	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argCount, argCount+1)
+
+	offset := (filters.Page - 1) * filters.Limit
+	args = append(args, filters.Limit, offset)
+
+	// Execute query
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("query failed: %w", err)
+	}
+	defer rows.Close()
+
+	var items []IntelligenceFeedItem
+	for rows.Next() {
+		var item IntelligenceFeedItem
+		err := rows.Scan(
+			&item.ID,
+			&item.Title,
+			&item.SourceID,
+			&item.SourceName,
+			&item.Category,
+			&item.CriticalityScore,
+			&item.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("scan failed: %w", err)
+		}
+		items = append(items, item)
+	}
+
+	return &IntelligenceFeedResult{
+		Items: items,
+		Total: total,
+	}, nil
+}
+
+// GetAllSources returns all sources (enabled + disabled)
+func (s *PostgresStorage) GetAllSources(ctx context.Context) ([]*Source, error) {
+	rows, err := s.db.QueryContext(ctx, queryGetAllSources)
+	if err != nil {
+		return nil, fmt.Errorf("sorgu başarısız oldu: %w", err)
+	}
+	defer rows.Close()
+
+	var sources []*Source
+	for rows.Next() {
+		source := &Source{}
+		err := rows.Scan(
+			&source.ID,
+			&source.Name,
+			&source.URL,
+			&source.Category,
+			&source.Criticality,
+			&source.Enabled,
+			&source.ScrapeInterval,
+			&source.LastScrapedAt,
+			&source.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("tarama başarısız oldu: %w", err)
+		}
+		sources = append(sources, source)
+	}
+
+	return sources, nil
+}
+
+func (s *PostgresStorage) CreateSource(ctx context.Context, input *SourceCreateInput) (*Source, error) {
+	source := &Source{}
+
+	err := s.db.QueryRowContext(
+		ctx,
+		queryCreateSource,
+		input.Name,
+		input.URL,
+		input.Category,
+		input.Criticality,
+		input.ScrapeInterval,
+	).Scan(
+		&source.ID,
+		&source.Name,
+		&source.URL,
+		&source.Category,
+		&source.Criticality,
+		&source.Enabled,
+		&source.ScrapeInterval,
+		&source.LastScrapedAt,
+		&source.CreatedAt,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("create failed: %w", err)
+	}
+
+	s.logger.Info("kaynak oluşturuldu",
+		slog.Int("id", source.ID),
+		slog.String("name", source.Name),
+	)
+
+	return source, nil
+}
+
+func (s *PostgresStorage) UpdateSource(ctx context.Context, id int, input *SourceUpdateInput) (*Source, error) {
+	source := &Source{}
+
+	err := s.db.QueryRowContext(
+		ctx,
+		queryUpdateSource,
+		input.Name,
+		input.Criticality,
+		input.Enabled,
+		input.ScrapeInterval,
+		id,
+	).Scan(
+		&source.ID,
+		&source.Name,
+		&source.URL,
+		&source.Category,
+		&source.Criticality,
+		&source.Enabled,
+		&source.ScrapeInterval,
+		&source.LastScrapedAt,
+		&source.CreatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("kaynak bulunamadı: %d", id)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("güncelleme başarısız oldu: %w", err)
+	}
+
+	s.logger.Info("kaynak güncellendi",
+		slog.Int("id", source.ID),
+	)
+
+	return source, nil
+}
+
+func (s *PostgresStorage) DeleteSource(ctx context.Context, id int) error {
+	result, err := s.db.ExecContext(ctx, queryDeleteSource, id)
+	if err != nil {
+		return fmt.Errorf("silme işlemi başarısız oldu: %w", err)
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("kaynak bulunamadı: %d", id)
+	}
+
+	s.logger.Info("kaynak silindi", slog.Int("id", id))
+
+	return nil
+}
+
+func (s *PostgresStorage) GetIntelligenceCountByCriticality(ctx context.Context, minScore int) (int, error) {
+	var count int
+	err := s.db.QueryRowContext(ctx, queryGetIntelligenceCountByCriticality, minScore).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("query failed: %w", err)
+	}
+	return count, nil
+}
+
+func (s *PostgresStorage) GetIntelligenceCountSince(ctx context.Context, since time.Time) (int, error) {
+	var count int
+	err := s.db.QueryRowContext(ctx, queryGetIntelligenceCountSince, since).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("query failed: %w", err)
+	}
+	return count, nil
+}
+
+func (s *PostgresStorage) GetCategoryDistribution(ctx context.Context) (map[string]int, error) {
+	rows, err := s.db.QueryContext(ctx, queryGetCategoryDistribution)
+	if err != nil {
+		return nil, fmt.Errorf("query failed: %w", err)
+	}
+	defer rows.Close()
+
+	distribution := make(map[string]int)
+	for rows.Next() {
+		var category string
+		var count int
+		if err := rows.Scan(&category, &count); err != nil {
+			return nil, fmt.Errorf("scan failed: %w", err)
+		}
+		distribution[category] = count
+	}
+
+	return distribution, nil
+}
+
+func (s *PostgresStorage) GetTimelineData(ctx context.Context, days int) ([]TimeSeriesData, error) {
+	rows, err := s.db.QueryContext(ctx, queryGetTimelineData, days)
+	if err != nil {
+		return nil, fmt.Errorf("query failed: %w", err)
+	}
+	defer rows.Close()
+
+	var timeline []TimeSeriesData
+	for rows.Next() {
+		var data TimeSeriesData
+		err := rows.Scan(
+			&data.Date,
+			&data.Critical,
+			&data.High,
+			&data.Medium,
+			&data.Low,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("scan failed: %w", err)
+		}
+		timeline = append(timeline, data)
+	}
+
+	return timeline, nil
+}
+
+func (s *PostgresStorage) TriggerManualScrape(ctx context.Context, sourceID int) error {
+
+	s.logger.Info("manuel scraper tetiklendi", slog.Int("source_id", sourceID))
+	return nil
 }

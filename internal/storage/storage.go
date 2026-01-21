@@ -6,6 +6,7 @@ import (
 )
 
 type Storage interface {
+	// Existing methods...
 	GetEnabledSources(ctx context.Context) ([]*Source, error)
 	GetSourceByID(ctx context.Context, id int) (*Source, error)
 	UpdateSourceLastScraped(ctx context.Context, sourceID int, scrapedAt time.Time) error
@@ -20,6 +21,20 @@ type Storage interface {
 
 	GetTotalCount(ctx context.Context) (int, error)
 	GetCriticalityDistribution(ctx context.Context) (map[string]int, error)
+
+	GetIntelligenceFeed(ctx context.Context, filters IntelligenceFilters) (*IntelligenceFeedResult, error)
+
+	GetAllSources(ctx context.Context) ([]*Source, error)
+	CreateSource(ctx context.Context, input *SourceCreateInput) (*Source, error)
+	UpdateSource(ctx context.Context, id int, input *SourceUpdateInput) (*Source, error)
+	DeleteSource(ctx context.Context, id int) error
+
+	GetIntelligenceCountByCriticality(ctx context.Context, minScore int) (int, error)
+	GetIntelligenceCountSince(ctx context.Context, since time.Time) (int, error)
+	GetCategoryDistribution(ctx context.Context) (map[string]int, error)
+	GetTimelineData(ctx context.Context, days int) ([]TimeSeriesData, error)
+
+	TriggerManualScrape(ctx context.Context, sourceID int) error
 
 	Ping(ctx context.Context) error
 	Close() error

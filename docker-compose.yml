@@ -75,24 +75,49 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+      
+  api:
+    build:
+      context: ./
+      dockerfile: internal/api/Dockerfile
+    container_name: cti-api
+    networks:
+      - cti-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"  
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: cti_data
+      DB_USER: cti_user
+      DB_PASSWORD: ${DB_PASSWORD:-change_in_production}
+      API_PORT: 8080
+      GIN_MODE: release
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  # 4️⃣ DASHBOARD - Görselleştirme Katmanı (opsiyonel şimdilik)
-  # dashboard:
-  #   build:
-  #     context: ./dashboard
-  #   container_name: cti-dashboard
-  #   networks:
-  #     - cti-network
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   ports:
-  #     - "8080:8080"  # Sadece dashboard dışarı açılır
-  #   environment:
-  #     DB_HOST: postgres
-  #     DB_PORT: 5432
-  #     DB_NAME: cti_data
-  #     DB_USER: cti_user
-  #     DB_PASSWORD: ${DB_PASSWORD:-change_in_production}
-  #   restart: unless-stopped
-
+  
+  dashboard:
+      build:
+        context: ./dashboard
+     
+      container_name: cti-dashboard
+      networks:
+        - cti-network
+      depends_on:
+        postgres:
+          condition: service_healthy
+        api:
+          condition: service_healthy
+      ports:
+        - "5173:80" 
+      environment:
+        - VITE_API_URL=http://localhost:8080/api
+      restart: unless-stopped

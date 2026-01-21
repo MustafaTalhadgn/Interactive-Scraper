@@ -1,6 +1,7 @@
 package storage
 
 const (
+	// Existing queries...
 	queryGetEnabledSources = `
 		SELECT id, name, url, category, criticality, enabled, 
 		       scrape_interval, last_scraped_at, created_at
@@ -71,7 +72,6 @@ const (
 	queryGetTotalIntelligenceCount = `
 		SELECT COUNT(*) FROM intelligence_data
 	`
-
 	queryGetCriticalityDistribution = `
 		SELECT 
 			CASE 
@@ -84,5 +84,90 @@ const (
 		FROM intelligence_data
 		GROUP BY criticality
 		ORDER BY criticality DESC
+	`
+
+	queryGetIntelligenceFeed = `
+		SELECT 
+			i.id,
+			i.title,
+			i.source_id,
+			s.name as source_name,
+			s.category,
+			i.criticality_score,
+			i.created_at
+		FROM intelligence_data i
+		JOIN sources s ON i.source_id = s.id
+		WHERE 1=1
+	`
+
+	queryCountIntelligenceFeed = `
+		SELECT COUNT(*)
+		FROM intelligence_data i
+		JOIN sources s ON i.source_id = s.id
+		WHERE 1=1
+	`
+
+	queryGetAllSources = `
+		SELECT id, name, url, category, criticality, enabled,
+		       scrape_interval, last_scraped_at, created_at
+		FROM sources
+		ORDER BY name ASC
+	`
+
+	queryCreateSource = `
+		INSERT INTO sources 
+		(name, url, category, criticality, scrape_interval, enabled)
+		VALUES ($1, $2, $3, $4, $5, true)
+		RETURNING id, name, url, category, criticality, enabled, 
+		          scrape_interval, last_scraped_at, created_at
+	`
+
+	queryUpdateSource = `
+		UPDATE sources
+		SET name = COALESCE(NULLIF($1, ''), name),
+		    criticality = COALESCE(NULLIF($2, ''), criticality),
+		    enabled = COALESCE($3, enabled),
+		    scrape_interval = COALESCE(NULLIF($4, ''), scrape_interval)
+		WHERE id = $5
+		RETURNING id, name, url, category, criticality, enabled,
+		          scrape_interval, last_scraped_at, created_at
+	`
+
+	queryDeleteSource = `
+		DELETE FROM sources WHERE id = $1
+	`
+	queryTriggerScrape = `UPDATE sources SET last_scraped_at = NULL WHERE id = $1`
+
+	queryGetIntelligenceCountByCriticality = `
+		SELECT COUNT(*)
+		FROM intelligence_data
+		WHERE criticality_score >= $1
+	`
+
+	queryGetIntelligenceCountSince = `
+		SELECT COUNT(*)
+		FROM intelligence_data
+		WHERE created_at >= $1
+	`
+
+	queryGetCategoryDistribution = `
+		SELECT s.category, COUNT(i.id) as count
+		FROM intelligence_data i
+		JOIN sources s ON i.source_id = s.id
+		GROUP BY s.category
+		ORDER BY count DESC
+	`
+
+	queryGetTimelineData = `
+		SELECT 
+			DATE(created_at) as date,
+			COUNT(CASE WHEN criticality_score >= 76 THEN 1 END) as critical,
+			COUNT(CASE WHEN criticality_score >= 51 AND criticality_score < 76 THEN 1 END) as high,
+			COUNT(CASE WHEN criticality_score >= 26 AND criticality_score < 51 THEN 1 END) as medium,
+			COUNT(CASE WHEN criticality_score < 26 THEN 1 END) as low
+		FROM intelligence_data
+		WHERE created_at >= CURRENT_DATE - $1::integer * INTERVAL '1 day'
+		GROUP BY DATE(created_at)
+		ORDER BY date ASC
 	`
 )

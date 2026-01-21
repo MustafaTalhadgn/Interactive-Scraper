@@ -28,7 +28,7 @@ func DefaultConfig() *Config {
 		CollapseWhitespace: true,
 		RemoveStopwords:    false,
 		RemovePunctuation:  false,
-		MaxLength:          50000,
+		MaxLength:          1000,
 	}
 }
 

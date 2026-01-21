@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// Existing models...
 type Source struct {
 	ID             int        `db:"id"`
 	Name           string     `db:"name"`
@@ -20,7 +21,7 @@ type IntelligenceData struct {
 	ID               int        `db:"id"`
 	SourceID         int        `db:"source_id"`
 	Title            string     `db:"title"`
-	RawContent       string     `db:"raw_content"`
+	Summary          string     `db:"summary"`
 	SourceURL        string     `db:"source_url"`
 	CriticalityScore int        `db:"criticality_score"`
 	PublishedAt      *time.Time `db:"published_at"`
@@ -44,7 +45,7 @@ type ExtractedFeatures struct {
 type IntelligenceInput struct {
 	SourceID         int
 	Title            string
-	RawContent       string
+	Summary          string
 	SourceURL        string
 	CriticalityScore int
 	PublishedAt      *time.Time
@@ -60,4 +61,53 @@ type FeatureInput struct {
 	Emails        []string
 	CVEs          []string
 	Keywords      []string
+}
+
+type IntelligenceFilters struct {
+	Page        int
+	Limit       int
+	Criticality string
+	SourceID    int
+	Category    string
+	Search      string
+	DateFrom    *time.Time
+	DateTo      *time.Time
+}
+
+type IntelligenceFeedResult struct {
+	Items []IntelligenceFeedItem
+	Total int
+}
+
+type IntelligenceFeedItem struct {
+	ID               int
+	Title            string
+	SourceName       string
+	SourceID         int
+	Category         string
+	CriticalityScore int
+	CreatedAt        time.Time
+}
+
+type SourceCreateInput struct {
+	Name           string
+	URL            string
+	Category       string
+	Criticality    string
+	ScrapeInterval string
+}
+
+type SourceUpdateInput struct {
+	Name           string
+	Criticality    string
+	Enabled        *bool
+	ScrapeInterval string
+}
+
+type TimeSeriesData struct {
+	Date     string
+	Critical int
+	High     int
+	Medium   int
+	Low      int
 }

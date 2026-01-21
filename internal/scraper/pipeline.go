@@ -118,7 +118,7 @@ func (p *Pipeline) Process(ctx context.Context, source *storage.Source) *Process
 	intelligenceInput := &storage.IntelligenceInput{
 		SourceID:         source.ID,
 		Title:            sanitizedTitle,
-		RawContent:       normalizedForDisplay,
+		Summary:          normalizedForDisplay,
 		SourceURL:        source.URL,
 		CriticalityScore: scoreResult.Score,
 		PublishedAt:      &parsed.Date,
@@ -138,7 +138,7 @@ func (p *Pipeline) Process(ctx context.Context, source *storage.Source) *Process
 	result.IntelligenceData = intelligenceInput
 	result.Duration = time.Since(start)
 
-	p.logger.Info("pipeline completed successfully",
+	p.logger.Info("pipeline başarıyla tamamlandı",
 		slog.Int("source_id", source.ID),
 		slog.String("title", sanitizedTitle),
 		slog.Int("score", scoreResult.Score),

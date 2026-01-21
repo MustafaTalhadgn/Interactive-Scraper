@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS sources (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     url TEXT NOT NULL UNIQUE,
-    category VARCHAR(50), -- forum, market, paste
+    category VARCHAR(50), 
     criticality VARCHAR(20) 
         CHECK (criticality IN ('low', 'medium', 'high', 'critical')),
     enabled BOOLEAN DEFAULT true,
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS intelligence_data (
     id SERIAL PRIMARY KEY,
     source_id INTEGER REFERENCES sources(id) ON DELETE CASCADE,
     title VARCHAR(500),
-    raw_content TEXT NOT NULL, 
+    summary TEXT NOT NULL, 
     source_url TEXT NOT NULL,
     criticality_score INT CHECK (criticality_score BETWEEN 0 AND 100),
     published_at TIMESTAMP,
@@ -24,24 +24,14 @@ CREATE TABLE IF NOT EXISTS intelligence_data (
 CREATE TABLE extracted_features (
     id SERIAL PRIMARY KEY,
     intelligence_id INTEGER REFERENCES intelligence_data(id) ON DELETE CASCADE,
-    
-
     bitcoin_addrs TEXT[], 
     ethereum_addrs TEXT[],
     monero_addrs TEXT[],
-    
-  
     onion_urls TEXT[],
     ip_addresses TEXT[],
-    
-
     emails TEXT[],
-    
-
     cves TEXT[],
-    
     keywords TEXT[],
-    
     created_at TIMESTAMP DEFAULT NOW()
 );
 
