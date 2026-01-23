@@ -25,7 +25,7 @@ func (u *UnicodeNormalizer) RemoveAccents(text string) string {
 	decomposed := norm.NFD.String(text)
 	var result []rune
 	for _, r := range decomposed {
-		if !unicode.Is(unicode.Mn, r) { // Mn = Nonspacing Mark (accents)
+		if !unicode.Is(unicode.Mn, r) {
 			result = append(result, r)
 		}
 	}
@@ -36,7 +36,7 @@ func (u *UnicodeNormalizer) NormalizeWhitespace(text string) string {
 	var result []rune
 	for _, r := range text {
 		if unicode.IsSpace(r) {
-			result = append(result, ' ') // Convert all whitespace to space
+			result = append(result, ' ')
 		} else {
 			result = append(result, r)
 		}

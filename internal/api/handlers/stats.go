@@ -82,7 +82,6 @@ func (h *StatsHandler) GetTimeline(c *gin.Context) {
 		return
 	}
 
-	// Convert storage.TimeSeriesData to models.TimeSeriesData
 	modelTimeline := make([]models.TimeSeriesData, len(timeline))
 	for i, t := range timeline {
 		modelTimeline[i] = models.TimeSeriesData{

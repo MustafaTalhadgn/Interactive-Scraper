@@ -51,7 +51,7 @@ func GetAllPatterns() []*Pattern {
 		{Type: PatternEmail, Regex: EmailPattern, Enabled: true},
 		{Type: PatternCVE, Regex: CVEPattern, Enabled: true},
 		{Type: PatternIPv4, Regex: IPv4Pattern, Enabled: true},
-		{Type: PatternDomain, Regex: DomainPattern, Enabled: false}, // Disabled by default (too noisy)
-		{Type: PatternPhone, Regex: PhonePattern, Enabled: false},   // Disabled by default (optional)
+		{Type: PatternDomain, Regex: DomainPattern, Enabled: false},
+		{Type: PatternPhone, Regex: PhonePattern, Enabled: false},
 	}
 }

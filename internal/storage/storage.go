@@ -3,10 +3,11 @@ package storage
 import (
 	"context"
 	"time"
+
+	"InteractiveScraper/internal/api/models" // <--- BU EKLENDİ
 )
 
 type Storage interface {
-	// Existing methods...
 	GetEnabledSources(ctx context.Context) ([]*Source, error)
 	GetSourceByID(ctx context.Context, id int) (*Source, error)
 	UpdateSourceLastScraped(ctx context.Context, sourceID int, scrapedAt time.Time) error
@@ -33,8 +34,9 @@ type Storage interface {
 	GetIntelligenceCountSince(ctx context.Context, since time.Time) (int, error)
 	GetCategoryDistribution(ctx context.Context) (map[string]int, error)
 	GetTimelineData(ctx context.Context, days int) ([]TimeSeriesData, error)
-
 	TriggerManualScrape(ctx context.Context, sourceID int) error
+	GetUserByUsername(ctx context.Context, username string) (*models.User, error)
+	CreateUser(ctx context.Context, user *models.User) error
 
 	Ping(ctx context.Context) error
 	Close() error

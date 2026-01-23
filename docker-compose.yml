@@ -1,3 +1,5 @@
+version: '3.8'
+
 networks:
   cti-network:
     driver: bridge
@@ -21,8 +23,6 @@ services:
       retries: 3
       start_period: 40s
 
-
-
   postgres:
     image: postgres:15-alpine
     container_name: cti-database
@@ -31,7 +31,7 @@ services:
     environment:
       POSTGRES_DB: cti_data
       POSTGRES_USER: cti_user
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-change_in_production}  
+      POSTGRES_PASSWORD: admin  
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql  
@@ -56,12 +56,12 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      TOR_PROXY: tor:9150
-      DB_HOST: postgres
+      TOR_PROXY: cti-tor-gateway:9150
+      DB_HOST: cti-database           
       DB_PORT: 5432
       DB_NAME: cti_data
       DB_USER: cti_user
-      DB_PASSWORD: ${DB_PASSWORD:-change_in_production}
+      DB_PASSWORD: admin            
       SCRAPER_INTERVAL: 1h  
       REQUEST_TIMEOUT: 60s
       MAX_RETRIES: 3
@@ -75,6 +75,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    volumes:
+      - ./logs:/app/logs
       
   api:
     build:
@@ -89,13 +91,16 @@ services:
     ports:
       - "8080:8080"  
     environment:
-      DB_HOST: postgres
+      DB_HOST: cti-database       
       DB_PORT: 5432
       DB_NAME: cti_data
       DB_USER: cti_user
-      DB_PASSWORD: ${DB_PASSWORD:-change_in_production}
-      API_PORT: 8080
+      DB_PASSWORD: admin           
+      API_PORT: 8080    
       GIN_MODE: release
+      JWT_SECRET: admin159          
+      TOR_PROXY: cti-tor-gateway:9150
+      TOR_CONTROL_PORT: cti-tor-gateway:9051
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
@@ -103,11 +108,9 @@ services:
       timeout: 10s
       retries: 3
 
-  
   dashboard:
       build:
         context: ./dashboard
-     
       container_name: cti-dashboard
       networks:
         - cti-network

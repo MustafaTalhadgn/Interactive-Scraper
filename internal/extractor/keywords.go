@@ -128,13 +128,11 @@ func getThreatKeywords() map[string]int {
 	}
 }
 
-// IsThreatKeyword checks if a word is a high-value threat keyword
 func (k *KeywordExtractor) IsThreatKeyword(word string) bool {
 	_, exists := k.threatKeywords[strings.ToLower(word)]
 	return exists
 }
 
-// GetThreatKeywordWeight returns the weight of a threat keyword
 func (k *KeywordExtractor) GetThreatKeywordWeight(word string) int {
 	weight, _ := k.threatKeywords[strings.ToLower(word)]
 	return weight

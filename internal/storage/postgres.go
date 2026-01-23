@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"time"
 
+	"InteractiveScraper/internal/api/models" // <--- BU EKLENDİ
+
 	"github.com/lib/pq"
 )
 
@@ -44,6 +46,33 @@ func NewPostgresStorage(dsn string, logger *slog.Logger) (*PostgresStorage, erro
 	}, nil
 }
 
+// User Methods
+func (s *PostgresStorage) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
+	user := &models.User{}
+	query := `SELECT id, username, password_hash, role, created_at FROM users WHERE username = $1`
+
+	err := s.db.QueryRowContext(ctx, query, username).Scan(
+		&user.ID, &user.Username, &user.PasswordHash, &user.Role, &user.CreatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("kullanıcı bulunamadı")
+	}
+	return user, err
+}
+
+// CreateUser güncellendi: Artık struct alıyor
+func (s *PostgresStorage) CreateUser(ctx context.Context, user *models.User) error {
+	query := `INSERT INTO users (username, password_hash, role) VALUES ($1, $2, $3) RETURNING id, created_at`
+
+	// ID ve CreatedAt veritabanından dönecek, struct'ı güncelleyelim
+	err := s.db.QueryRowContext(ctx, query, user.Username, user.PasswordHash, user.Role).Scan(&user.ID, &user.CreatedAt)
+	if err != nil {
+		return fmt.Errorf("kullanıcı oluşturulamadı: %w", err)
+	}
+	return nil
+}
+
+// Source Methods
 func (s *PostgresStorage) GetEnabledSources(ctx context.Context) ([]*Source, error) {
 	rows, err := s.db.QueryContext(ctx, queryGetEnabledSources)
 	if err != nil {
@@ -410,7 +439,7 @@ func (s *PostgresStorage) GetIntelligenceFeed(ctx context.Context, filters Intel
 	}
 
 	if filters.Search != "" {
-		clause := fmt.Sprintf(" AND (i.title ILIKE $%d OR i.raw_content ILIKE $%d)", argCount, argCount)
+		clause := fmt.Sprintf(" AND (i.title ILIKE $%d OR i.summary ILIKE $%d)", argCount, argCount)
 		query += clause
 		countQuery += clause
 		searchPattern := "%" + filters.Search + "%"
@@ -434,21 +463,18 @@ func (s *PostgresStorage) GetIntelligenceFeed(ctx context.Context, filters Intel
 		argCount++
 	}
 
-	// Get total count
 	var total int
 	err := s.db.QueryRowContext(ctx, countQuery, args...).Scan(&total)
 	if err != nil {
 		return nil, fmt.Errorf("count query failed: %w", err)
 	}
 
-	// Add ORDER BY and pagination
 	query += " ORDER BY i.created_at DESC"
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argCount, argCount+1)
 
 	offset := (filters.Page - 1) * filters.Limit
 	args = append(args, filters.Limit, offset)
 
-	// Execute query
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("query failed: %w", err)
@@ -479,7 +505,6 @@ func (s *PostgresStorage) GetIntelligenceFeed(ctx context.Context, filters Intel
 	}, nil
 }
 
-// GetAllSources returns all sources (enabled + disabled)
 func (s *PostgresStorage) GetAllSources(ctx context.Context) ([]*Source, error) {
 	rows, err := s.db.QueryContext(ctx, queryGetAllSources)
 	if err != nil {
@@ -546,11 +571,22 @@ func (s *PostgresStorage) CreateSource(ctx context.Context, input *SourceCreateI
 }
 
 func (s *PostgresStorage) UpdateSource(ctx context.Context, id int, input *SourceUpdateInput) (*Source, error) {
+
+	const query = `
+        UPDATE sources 
+        SET name = COALESCE(NULLIF($1, ''), name), 
+            criticality = COALESCE(NULLIF($2, ''), criticality),
+            enabled = COALESCE($3, enabled),
+            scrape_interval = COALESCE(NULLIF($4, '')::INTERVAL, scrape_interval)
+        WHERE id = $5
+        RETURNING id, name, url, category, criticality, enabled, 
+                  scrape_interval, last_scraped_at, created_at`
+
 	source := &Source{}
 
 	err := s.db.QueryRowContext(
 		ctx,
-		queryUpdateSource,
+		query,
 		input.Name,
 		input.Criticality,
 		input.Enabled,
@@ -572,7 +608,8 @@ func (s *PostgresStorage) UpdateSource(ctx context.Context, id int, input *Sourc
 		return nil, fmt.Errorf("kaynak bulunamadı: %d", id)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("güncelleme başarısız oldu: %w", err)
+		// Hata detayını görelim
+		return nil, fmt.Errorf("güncelleme başarısız oldu (SQL Error): %w", err)
 	}
 
 	s.logger.Info("kaynak güncellendi",

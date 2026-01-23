@@ -10,6 +10,7 @@ import (
 type Config struct {
 	TorProxy       string
 	TorControlPort string
+	JWTSecret      string
 
 	DBHost     string
 	DBPort     int
@@ -30,6 +31,7 @@ func Load() *Config {
 	return &Config{
 		TorProxy:       getEnv("TOR_PROXY", "tor:9150"),
 		TorControlPort: getEnv("TOR_CONTROL_PORT", "tor:9050"),
+		JWTSecret:      getEnv("JWT_SECRET", "default-secret-key"),
 
 		DBHost:     getEnv("DB_HOST", "postgres"),
 		DBPort:     getEnvAsInt("DB_PORT", 5432),
@@ -77,6 +79,9 @@ func (c *Config) Validate() error {
 	}
 	if c.TorProxy == "" {
 		return fmt.Errorf("TOR_PROXY boş olamaz")
+	}
+	if c.JWTSecret == "" {
+		return fmt.Errorf("JWT_SECRET boş olamaz")
 	}
 	return nil
 }

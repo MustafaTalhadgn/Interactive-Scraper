@@ -25,20 +25,20 @@ const (
 
 	queryInsertIntelligence = `
 		INSERT INTO intelligence_data 
-		(source_id, title, raw_content, source_url, criticality_score, published_at)
+		(source_id, title, summary, source_url, criticality_score, published_at)
 		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id, created_at
 	`
 
 	queryGetIntelligenceByID = `
-		SELECT id, source_id, title, raw_content, source_url,
+		SELECT id, source_id, title, summary, source_url,
 		       criticality_score, published_at, created_at
 		FROM intelligence_data
 		WHERE id = $1
 	`
 
 	queryGetRecentIntelligence = `
-		SELECT id, source_id, title, raw_content, source_url,
+		SELECT id, source_id, title, summary, source_url,
 		       criticality_score, published_at, created_at
 		FROM intelligence_data
 		ORDER BY created_at DESC
@@ -46,7 +46,7 @@ const (
 	`
 
 	queryGetIntelligenceByCriticality = `
-		SELECT id, source_id, title, raw_content, source_url,
+		SELECT id, source_id, title, summary, source_url,
 		       criticality_score, published_at, created_at
 		FROM intelligence_data
 		WHERE criticality_score >= $1

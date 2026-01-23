@@ -36,7 +36,7 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 
-	routes.SetupRoutes(router, store, logger)
+	routes.SetupRoutes(router, store, logger, cfg)
 
 	port := os.Getenv("API_PORT")
 	if port == "" {

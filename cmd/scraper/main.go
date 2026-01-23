@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"log"
 	"log/slog"
 	"net/http"
@@ -16,8 +17,19 @@ import (
 )
 
 func main() {
+	if err := os.MkdirAll("logs", 0755); err != nil {
+		panic("Log klasörü oluşturulamadı: " + err.Error())
+	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+	logFile, err := os.OpenFile("logs/scraper.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		panic("Log dosyası açılamadı: " + err.Error())
+	}
+	defer logFile.Close()
+
+	multiWriter := io.MultiWriter(os.Stdout, logFile)
+
+	logger := slog.New(slog.NewTextHandler(multiWriter, &slog.HandlerOptions{
 		Level: getLogLevel(os.Getenv("LOG_LEVEL")),
 	}))
 

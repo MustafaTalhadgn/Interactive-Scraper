@@ -27,7 +27,6 @@ func NewSourceHandler(storage storage.Storage, logger *slog.Logger) *SourceHandl
 func (h *SourceHandler) ListSources(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	// Get all sources (enabled + disabled)
 	sources, err := h.storage.GetAllSources(ctx)
 	if err != nil {
 		h.logger.Error("failed to list sources", slog.String("error", err.Error()))
