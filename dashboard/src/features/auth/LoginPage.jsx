@@ -46,7 +46,7 @@ const LoginPage = () => {
             <Shield className="w-8 h-8 text-blue-500" />
           </div>
           <h2 className="text-2xl font-bold text-white">TorAnaliz</h2>
-          <p className="text-gray-400 mt-2">Cyber Threat Intelligence Platform</p>
+          <p className="text-gray-400 mt-2">Siber Tehdit İstihbarat Platformu</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
@@ -65,7 +65,7 @@ const LoginPage = () => {
               <input
                 type="text"
                 className="block w-full pl-10 bg-gray-900 border border-gray-600 rounded-lg py-2.5 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                placeholder="admin"
+                placeholder="kullanıcı adınızı girin"
                 value={formData.username}
                 onChange={(e) => setFormData({...formData, username: e.target.value})}
               />

@@ -1,6 +1,5 @@
 package scorer
 
-// Criticality represents threat criticality levels
 type Criticality string
 
 const (
@@ -11,12 +10,11 @@ const (
 )
 
 type CriticalityThresholds struct {
-	Low      int 
-	Medium   int 
-	High     int 
+	Low      int
+	Medium   int
+	High     int
 	Critical int
 }
-
 
 func DefaultThresholds() *CriticalityThresholds {
 	return &CriticalityThresholds{
@@ -31,7 +29,7 @@ func ClassifyCriticality(score int, thresholds *CriticalityThresholds) Criticali
 	if thresholds == nil {
 		thresholds = DefaultThresholds()
 	}
-	
+
 	switch {
 	case score >= 76:
 		return CriticalityCritical
@@ -44,19 +42,18 @@ func ClassifyCriticality(score int, thresholds *CriticalityThresholds) Criticali
 	}
 }
 
-
 func GetCriticalityColor(criticality Criticality) string {
 	switch criticality {
 	case CriticalityCritical:
-		return "#DC2626" 
+		return "#DC2626"
 	case CriticalityHigh:
-		return "#F59E0B" 
+		return "#F59E0B"
 	case CriticalityMedium:
-		return "#FBBF24" 
+		return "#FBBF24"
 	case CriticalityLow:
-		return "#10B981" 
+		return "#10B981"
 	default:
-		return "#6B7280" 
+		return "#6B7280"
 	}
 }
 

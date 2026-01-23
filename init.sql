@@ -53,7 +53,6 @@ INSERT INTO sources (name, url, category, criticality, scrape_interval) VALUES
 ('Benzona', 'http://benzona6x5ggng3hx52h4mak5sgx5vukrdlrrd3of54g2uppqog2joyd.onion/', 'ransomware', 'medium', '1 hour'),
 ('Blackout', 'http://black3gnkizshuynieigw6ejgpblb53mpasftzd6pydqpmq2vn2xf6yd.onion/', 'ransomware', 'medium', '1 hour'),
 ('Brain Cipher', 'http://vkvsgl7lhipjirmz6j5ubp3w3bwvxgcdbpi3fsbqngfynetqtw4w5hyd.onion/', 'ransomware', 'medium', '1 hour'),
-('CHAOS', 'http://hptqq2o2qjva7lcaaq67w36jihzivkaitkexorauw7b2yul2z6zozpqd.onion/', 'ransomware', 'medium', '1 hour'),
 ('CiphBit', 'http://ciphbitqyg26jor7eeo6xieyq7reouctefrompp6ogvhqjba7uo4xdid.onion/', 'ransomware', 'medium', '1 hour'),
 ('ContFR', 'http://zprxx7sfc26rufggreanowmme5qqouqegr2efnko6erycquwvpq5egid.onion/', 'ransomware', 'medium', '1 hour');
 
