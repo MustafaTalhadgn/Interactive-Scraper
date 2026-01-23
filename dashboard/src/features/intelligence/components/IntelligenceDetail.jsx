@@ -3,6 +3,8 @@ import {
   Calendar, Globe, Shield, ExternalLink, 
   Hash, Mail, Server, Bitcoin, AlertTriangle, Key, Copy, Check
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import Modal from '../../../shared/components/Modal';
 import CriticalityBadge from '../../../shared/components/CriticalityBadge';
 import LoadingSpinner from '../../../shared/components/LoadingSpinner';
@@ -141,9 +143,17 @@ const IntelligenceDetail = ({ id, isOpen, onClose }) => {
             </h3>
             <div className="bg-gray-900 rounded-lg border border-gray-700 p-5 relative group">
 
-              <div className="text-gray-300 text-sm whitespace-pre-wrap break-all leading-relaxed font-mono overflow-hidden">
-                 {item.summary ? item.summary : 'İçerik özeti oluşturulamadı.'}
-               </div>
+              <div className="text-gray-300 text-sm ...">
+              <ReactMarkdown 
+                  remarkPlugins={[remarkGfm]} 
+                  components={{
+                    
+                      a: ({node, ...props}) => <a {...props} className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer" />
+                  }}
+              >
+                  {item.summary || 'İçerik özeti oluşturulamadı.'}
+              </ReactMarkdown>
+          </div>
                
 
                <button 

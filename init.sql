@@ -51,7 +51,6 @@ INSERT INTO sources (name, url, category, criticality, scrape_interval) VALUES
 ('Beast Leaks', 'http://beast6azu4f7fxjakiayhnssybibsgjnmy77a6duufqw5afjzfjhzuqd.onion/', 'ransomware', 'medium', '1 hour'),
 ('Dread Forum', 'https://dreadytofatroptsdj6io7l3xptbet6onoyno2yv7jicoxknyazubrad.onion/', 'forum', 'low', '1 hour'),
 ('Benzona', 'http://benzona6x5ggng3hx52h4mak5sgx5vukrdlrrd3of54g2uppqog2joyd.onion/', 'ransomware', 'medium', '1 hour'),
-('Clist', 'http://ctyfftrjgtwdjzlgqh4avbd35sqrs6tde4oyam2ufbjch6oqpqtkdtid.onion/', 'ransomware', 'medium', '1 hour'),
 ('Blackout', 'http://black3gnkizshuynieigw6ejgpblb53mpasftzd6pydqpmq2vn2xf6yd.onion/', 'ransomware', 'medium', '1 hour'),
 ('Brain Cipher', 'http://vkvsgl7lhipjirmz6j5ubp3w3bwvxgcdbpi3fsbqngfynetqtw4w5hyd.onion/', 'ransomware', 'medium', '1 hour'),
 ('CHAOS', 'http://hptqq2o2qjva7lcaaq67w36jihzivkaitkexorauw7b2yul2z6zozpqd.onion/', 'ransomware', 'medium', '1 hour'),
